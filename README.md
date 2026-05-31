@@ -14,6 +14,7 @@ A lightweight cursor for non-linear parsing of byte slices.
 scanning, backtracking, and consuming bytes without allocating.
 
 - Optimized character and string search via [`memchr`](https://github.com/BurntSushi/memchr)
+    - Controlled by `intrinsics` feature flag
 - Simple lookahead and lookbehind of whitespace characters
 - Indentation counting and paragraph/line awareness
 
