@@ -3,7 +3,7 @@ use std::ops::Deref;
 #[cfg(feature = "intrinsics")]
 use memchr::{memchr, memchr2, memchr3, memmem};
 
-use crate::ext::CharExt;
+use crate::traits::CharExt;
 
 /// A lightweight, zero-copy cursor over a slice.
 ///

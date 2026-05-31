@@ -1,3 +1,5 @@
+use crate::Tape;
+
 #[derive(Copy, Clone)]
 struct CharType(u8);
 
@@ -53,12 +55,12 @@ impl CharExt for u8 {
     }
 }
 
-pub trait SliceExt<'a> {
+pub trait SliceExt<'a, T> {
     /// Returns a subslice with leading and trailing flanking white space removed.
     fn trim_simple_ws(self) -> Self;
 }
 
-impl<'a> SliceExt<'a> for &'a [u8] {
+impl<'a> SliceExt<'a, u8> for &'a [u8] {
     fn trim_simple_ws(mut self) -> Self {
         while let [first, rest @ ..] = self {
             // peel off front
@@ -77,5 +79,16 @@ impl<'a> SliceExt<'a> for &'a [u8] {
             }
         }
         self
+    }
+}
+
+pub trait ToTape<'a, T> {
+    /// An ergonomic alternative to `Tape::new()`.
+    fn to_tape(self) -> Tape<'a, T>;
+}
+
+impl<'a, T> ToTape<'a, T> for &'a [T] {
+    fn to_tape(self) -> Tape<'a, T> {
+        Tape::new(self)
     }
 }
