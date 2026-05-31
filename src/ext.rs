@@ -2,10 +2,8 @@
 struct CharType(u8);
 
 impl CharType {
-    const IS_KEY_PART: Self = Self(0b0001);
-    const IS_KEY_START: Self = Self(0b0010);
     const IS_SIMPLE_WS: Self = Self(0b0100);
-    const FLAGS_LEN: u32 = 3; // number of flag bits
+    const FLAGS_LEN: u32 = 1; // number of flag bits
 
     #[inline]
     const fn bits(self) -> u8 {
@@ -24,34 +22,6 @@ const CHAR_TABLE: [u8; 256] = {
     table[b' ' as usize] = CharType::IS_SIMPLE_WS.with_len(1);
     table[b'\t' as usize] = CharType::IS_SIMPLE_WS.with_len(4);
     table[b'\r' as usize] = CharType::IS_SIMPLE_WS.with_len(1);
-
-    // Get starts
-    let starts = concat!(
-        "abcdefghijklmnopqrstuvwxyz",
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        "$",
-    )
-    .as_bytes();
-    let mut i = 0;
-    while i < starts.len() {
-        table[starts[i] as usize] = CharType::IS_KEY_START.bits();
-        i += 1;
-    }
-
-    // Get parts
-    let parts = concat!(
-        "abcdefghijklmnopqrstuvwxyz",
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        "0123456789",
-        "-_.$",
-    )
-    .as_bytes();
-    let mut i = 0;
-    while i < parts.len() {
-        table[parts[i] as usize] = CharType::IS_KEY_PART.bits();
-        i += 1;
-    }
-
     table
 };
 
