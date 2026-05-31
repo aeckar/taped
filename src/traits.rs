@@ -82,6 +82,7 @@ impl<'a> SliceExt<'a, u8> for &'a [u8] {
     }
 }
 
+/// Provides the convenience function `to_tape`.
 pub trait ToTape<'a, T> {
     /// An ergonomic alternative to `Tape::new()`.
     fn to_tape(self) -> Tape<'a, T>;
