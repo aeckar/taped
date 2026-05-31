@@ -1,0 +1,13 @@
+[package]
+name = "taped"
+version = "0.1.0"
+edition = "2024"
+description = "A lightweight cursor for non-linear parsing of slices."
+license = "MIT"
+repository = "https://github.com/aeckar/taped"
+readme = "README.md"
+keywords = ["iter", "cursor", "pointer"]
+categories = ["parsing", "data-structures"]
+
+[dependencies]
+memchr = "2.8.0"
