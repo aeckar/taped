@@ -1,5 +1,6 @@
 use std::ops::Deref;
 
+#[cfg(feature = "intrinsics")]
 use memchr::{memchr, memchr2, memchr3, memmem};
 
 use crate::ext::CharExt;
@@ -403,6 +404,7 @@ impl<'a> Tape<'a, u8> {
     ///
     /// Returns `false` if exhausted.
     #[inline]
+    #[cfg(feature = "intrinsics")]
     pub fn seek_ch(&mut self, query: u8) -> bool {
         if let Some(offset) = memchr(query, &self.raw[self.pos..]) {
             self.pos += offset;
@@ -420,6 +422,7 @@ impl<'a> Tape<'a, u8> {
     ///
     /// Returns `false` if exhausted.
     #[inline]
+    #[cfg(feature = "intrinsics")]
     pub fn seek_ch2(&mut self, ch0: u8, ch1: u8) -> bool {
         if let Some(offset) = memchr2(ch0, ch1, &self.raw[self.pos..]) {
             self.pos += offset;
@@ -437,6 +440,7 @@ impl<'a> Tape<'a, u8> {
     ///
     /// Returns `false` if exhausted.
     #[inline]
+    #[cfg(feature = "intrinsics")]
     pub fn seek_ch3(&mut self, ch0: u8, ch1: u8, ch2: u8) -> bool {
         if let Some(offset) = memchr3(ch0, ch1, ch2, &self.raw[self.pos..]) {
             self.pos += offset;
@@ -455,7 +459,14 @@ impl<'a> Tape<'a, u8> {
     /// Returns `false` if exhausted.
     #[inline]
     pub fn seek_at(&mut self, query: &'a [u8]) -> bool {
-        if let Some(offset) = memmem::find(&self.raw[self.pos..], query) {
+        let offset = if cfg!(feature = "intrinsics") {
+            memmem::find(&self.raw[self.pos..], query)
+        } else {
+            self.raw[self.pos..]
+                .windows(query.len())
+                .position(|window| window == query)
+        };
+        if let Some(offset) = offset {
             self.pos += offset;
             return true;
         }
