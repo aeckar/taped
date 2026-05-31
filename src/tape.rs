@@ -88,8 +88,8 @@ use crate::ext::CharExt;
 /// | `count_indent` | Counts leading tabs in the current line | `usize` |
 ///
 /// # Implementation
-/// `#[inline(always)]` should be restricted to functions called often in the
-/// main `Scanner`/`Grammar` recursions, where the benefit of inlining is completely certain.
+/// `#[inline(always)]` should be restricted to functions called often in
+/// hot scanner loops, where the benefit of inlining is completely certain.
 ///
 /// `raw` should be hidden from users to promote orthogonality.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,7 +114,7 @@ impl<'a, T> Tape<'a, T> {
     }
 
     /// Returns a subslice over the original slice from the current position.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn rest(self) -> &'a [T] {
         &self.raw[self.pos..self.raw.len()]
