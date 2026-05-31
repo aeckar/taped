@@ -1,5 +1,5 @@
-pub mod tape;
 pub mod ext;
+pub mod tape;
 
-pub use tape::*;
-pub use ext::*;
+pub use ext::{CharExt, SliceExt};
+pub use tape::Tape;
