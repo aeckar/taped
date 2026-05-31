@@ -30,7 +30,7 @@ use crate::ext::CharExt;
 ///
 /// Instances may also be dereferenced as the underlying slice,
 /// which exposes important operations such as global indexing and iteration.
-/// 
+///
 /// # API
 ///
 /// ## Indexing
@@ -114,9 +114,14 @@ impl<'a, T> Tape<'a, T> {
     }
 
     /// Returns a subslice over the original slice from the current position.
+    ///
+    /// If the current position is out of bounds, returns an empty slice.
     #[inline]
     #[must_use]
     pub fn rest(self) -> &'a [T] {
+        if self.pos >= self.raw.len() {
+            return &self.raw[0..0];
+        }
         &self.raw[self.pos..self.raw.len()]
     }
 
@@ -132,8 +137,8 @@ impl<'a, T> Tape<'a, T> {
         self.pos -= 1;
     }
 
-    /// Returns true if the cursor is past the last element.
-    pub const fn is_exhausted(&mut self) -> bool {
+    /// Returns `true` if the cursor is past the last element.
+    pub const fn is_exhausted(self) -> bool {
         self.pos >= self.raw.len()
     }
 }
@@ -171,10 +176,9 @@ impl<'a, T: Copy + PartialEq> Tape<'a, T> {
     pub const fn peek(self) -> Option<T> {
         let pos = self.pos + 1;
         if pos < self.raw.len() {
-            Some(self.raw[pos])
-        } else {
-            None
+            return Some(self.raw[pos]);
         }
+        None
     }
 
     /// Returns the element at `pos - 1`, or `None` if that position is out of bounds.
@@ -183,39 +187,50 @@ impl<'a, T: Copy + PartialEq> Tape<'a, T> {
     pub const fn peek_back(self) -> Option<T> {
         let pos = self.pos - 1;
         if pos < self.raw.len() {
-            Some(self.raw[pos])
-        } else {
-            None
+            return Some(self.raw[pos]);
         }
+        None
     }
 
     /// Returns the position of the first element returning true, or `None`.
+    ///
+    /// Returns `None` if exhausted.
     #[must_use]
     #[inline]
     pub fn poll<F>(self, mut pred: F) -> Option<usize>
     where
         F: FnMut(T, usize) -> bool,
     {
+        if self.is_exhausted() {
+            return None;
+        }
         (self.pos..self.raw.len()).find(|&pos| pred(self.raw[pos], pos))
     }
 
     /// Returns the position of the last element returning true, or `None`.
+    ///
+    /// Returns `None` if exhausted.
     #[must_use]
     #[inline]
     pub fn poll_back<F>(self, mut pred: F) -> Option<usize>
     where
         F: FnMut(T, usize) -> bool,
     {
+        if self.is_exhausted() {
+            return None;
+        }
         (self.pos..self.raw.len())
             .rev()
             .find(|&pos| pred(self.raw[pos], pos))
     }
 
-    /// Advance `pos` until `pred` returns false for the element at the
+    /// Advance `pos` until `pred` returns `false` for the element at the
     /// current position.
     ///
     /// Leaves `pos` pointing at the matching element (or at `raw.len()` when none matched).
     /// Returns the subslice iterated over.
+    ///
+    /// Returns an empty slice if exhausted.
     #[inline]
     pub fn consume<F>(&mut self, mut pred: F) -> &'a [T]
     where
@@ -231,11 +246,13 @@ impl<'a, T: Copy + PartialEq> Tape<'a, T> {
         }
     }
 
-    /// Decrement `pos` until `pred` returns false for the element at the
+    /// Decrement `pos` until `pred` returns `false` for the element at the
     /// current position.
     ///
     /// Leaves `pos` pointing at the matching element (or at `raw.len()` when none matched).
     /// Returns the subslice iterated over.
+    ///
+    /// Returns an empty slice if exhausted.
     #[inline]
     pub fn put_back<F>(&mut self, mut pred: F) -> &'a [T]
     where
@@ -255,6 +272,8 @@ impl<'a, T: Copy + PartialEq> Tape<'a, T> {
     ///
     /// Returns `true` if found and `pos` is left pointing at the match,
     /// or `false` and `pos` is restored to its original value.
+    ///
+    /// Returns `false` if exhausted.
     #[inline]
     pub fn seek<F>(&mut self, pred: F) -> bool
     where
@@ -273,6 +292,8 @@ impl<'a, T: Copy + PartialEq> Tape<'a, T> {
     ///
     /// Returns `true` if found and `pos` is left pointing at the match,
     /// or `false` and `pos` is restored to its original value.
+    ///
+    /// Returns an empty slice if exhausted.
     #[inline]
     pub fn seek_back<F>(&mut self, pred: F) -> bool
     where
@@ -287,7 +308,7 @@ impl<'a, T: Copy + PartialEq> Tape<'a, T> {
         }
     }
 
-    /// Returns true if the substring starting at the current position
+    /// Returns `true` if the substring starting at the current position
     /// starts with the given string.
     #[must_use]
     #[inline]
@@ -298,21 +319,21 @@ impl<'a, T: Copy + PartialEq> Tape<'a, T> {
 
 /// `elem` should be used as lambda argument in case any function should be made generic.
 impl<'a> Tape<'a, u8> {
-    /// Returns true if the character at the given position has clearance on its left side.
+    /// Returns `true` if the character at the given position has clearance on its left side.
     #[must_use]
     #[inline]
     pub fn is_left_clear(self, pos: usize) -> bool {
         pos == 0 || self.raw.get(pos - 1).is_none_or(|elem| elem.is_simple_ws())
     }
 
-    /// Returns true if the character at the given position has clearance on its right side.
+    /// Returns `true` if the character at the given position has clearance on its right side.
     #[must_use]
     #[inline]
     pub fn is_right_clear(self, pos: usize) -> bool {
         self.raw.get(pos + 1).is_none_or(|elem| elem.is_simple_ws())
     }
 
-    /// Returns true if the character cluster whose last character is at
+    /// Returns `true` if the character cluster whose last character is at
     /// the current position has the correct clearance to be a closer
     /// (has clearance on either side).
     #[must_use]
@@ -323,14 +344,19 @@ impl<'a> Tape<'a, u8> {
 
     /// Returns the position of the first character returning true,
     /// respecting paragraph spacing rules, or `None`.
+    ///
+    /// Returns `None` if exhausted.
     #[must_use]
     #[inline]
     pub fn poll_in_pgraph<F>(self, spacing: u8, mut pred: F) -> Option<usize>
     where
         F: FnMut(u8, usize) -> bool,
     {
+        if self.is_exhausted() {
+            return None;
+        }
         let mut nl_count = 0;
-        for (i, &elem) in self.raw.iter().enumerate() {
+        for (i, &elem) in self.raw[self.pos..].iter().enumerate() {
             if elem == b'\n' {
                 nl_count += 1;
                 if nl_count >= spacing {
@@ -339,18 +365,20 @@ impl<'a> Tape<'a, u8> {
             } else {
                 nl_count = 0;
             }
-            if pred(elem, i) {
-                return Some(i);
+            if pred(elem, i + self.pos) {
+                return Some(i + self.pos);
             }
         }
         None
     }
 
-    /// Advances `pos` until `pred` returns false for the character at the
+    /// Advances `pos` until `pred` returns `false` for the character at the
     /// current position, respecting paragraph spacing rules.
     ///
     /// Leaves `pos` pointing at the matching character (or at `raw.len()` when none matched).
     /// Returns the subslice iterated over.
+    ///
+    /// Returns an empty slice if exhausted.
     #[inline]
     pub fn consume_in_pgraph<F>(&mut self, spacing: u8, mut pred: F) -> &'a [u8]
     where
@@ -372,6 +400,8 @@ impl<'a> Tape<'a, u8> {
     /// or `false` and `pos` is restored to its original value.
     ///
     /// Optimized for single byte search using SIMD.
+    ///
+    /// Returns `false` if exhausted.
     #[inline]
     pub fn seek_ch(&mut self, query: u8) -> bool {
         if let Some(offset) = memchr(query, &self.raw[self.pos..]) {
@@ -387,6 +417,8 @@ impl<'a> Tape<'a, u8> {
     /// or `false` and `pos` is restored to its original value.
     ///
     /// Optimized for single byte search using SIMD.
+    ///
+    /// Returns `false` if exhausted.
     #[inline]
     pub fn seek_ch2(&mut self, ch0: u8, ch1: u8) -> bool {
         if let Some(offset) = memchr2(ch0, ch1, &self.raw[self.pos..]) {
@@ -402,6 +434,8 @@ impl<'a> Tape<'a, u8> {
     /// or `false` and `pos` is restored to its original value.
     ///
     /// Optimized for single byte search using SIMD.
+    ///
+    /// Returns `false` if exhausted.
     #[inline]
     pub fn seek_ch3(&mut self, ch0: u8, ch1: u8, ch2: u8) -> bool {
         if let Some(offset) = memchr3(ch0, ch1, ch2, &self.raw[self.pos..]) {
@@ -417,6 +451,8 @@ impl<'a> Tape<'a, u8> {
     /// or `false` and `pos` is restored to its original value.
     ///
     /// Optimized using Two-Way search algorithm.
+    ///
+    /// Returns `false` if exhausted.
     #[inline]
     pub fn seek_at(&mut self, query: &'a [u8]) -> bool {
         if let Some(offset) = memmem::find(&self.raw[self.pos..], query) {
@@ -430,6 +466,8 @@ impl<'a> Tape<'a, u8> {
     ///
     /// Returns `true` if found and `pos` is left pointing at the match,
     /// or `false` and `pos` is restored to its original value.
+    ///
+    /// Returns `false` if exhausted.
     #[inline]
     pub fn seek_at_in_pgraph(&mut self, spacing: u8, query: &'a [u8]) -> bool {
         self.seek_in_pgraph(spacing, |_, pos| self.raw[pos..].starts_with(query))
@@ -441,15 +479,19 @@ impl<'a> Tape<'a, u8> {
     /// or `false` and `pos` is restored to its original value.
     ///
     /// For multi-byte sequences, use `seek_at_in_pgraph`.
+    ///
+    /// Returns `false` if exhausted.
     #[inline]
     pub fn seek_ch_in_pgraph(&mut self, spacing: u8, query: u8) -> bool {
         self.seek_in_pgraph(spacing, |_, pos| self.raw[pos] == query)
     }
 
-    /// Advances `pos` until `pred` returns true within the current paragraph.
+    /// Advances `pos` until `pred` returns `true` within the current paragraph.
     ///
     /// Returns `true` if found (leaving `pos` at the match), or `false`
     /// and `pos` is restored to its original value.
+    ///
+    /// Returns `false` if exhausted.
     #[inline]
     pub fn seek_in_pgraph<F>(&mut self, spacing: u8, pred: F) -> bool
     where
@@ -464,23 +506,30 @@ impl<'a> Tape<'a, u8> {
         }
     }
 
-    /// Returns true if the current character belongs to a line prefix.
+    /// Returns `true` if the current character belongs to a line prefix.
     ///
     /// A character is part of a line prefix if there are no non-whitespace characters between
     /// the current character and the previous newline, the beginning of the input, or
     /// itself if it is a newline.
+    ///
+    /// Returns `false` if exhausted.
     #[must_use]
     #[inline]
     pub fn is_cur_prefix(self) -> bool {
         self.is_prefix(self.pos)
     }
 
-    /// Returns true if there are no non-whitespace characters between
+    /// Returns `true` if there are no non-whitespace characters between
     /// the given character and the previous newline, the beginning of the input, or
     /// itself if it is a newline.
+    ///
+    /// Returns `false` for any `pos` out of bounds.
     #[must_use]
     #[inline]
     pub fn is_prefix(self, pos: usize) -> bool {
+        if pos >= self.raw.len() {
+            return false;
+        }
         for i in (0..pos).rev() {
             let c = self.raw[i]; // this is safe because i < self.pos
             if c == b'\n' {
@@ -497,10 +546,13 @@ impl<'a> Tape<'a, u8> {
     ///
     /// Counts the number of tabs or the number of space characters divided by 4 (floored).
     ///
-    /// Used to determine separation between table cells and indentation of list items.
+    /// Returns 0 if exhausted.
     #[must_use]
     #[inline]
     pub fn count_indent(self) -> u8 {
+        if self.is_exhausted() {
+            return 0;
+        }
         let ws = &self.raw[self.poll_back(|elem, _| elem == b'\n').unwrap_or(0)..self.pos];
         let (tabs, spaces) = ws.iter().fold((0, 0), |(t, s), &elem| match elem {
             b'\t' => (t + 1, s),
