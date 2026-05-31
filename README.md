@@ -2,10 +2,18 @@
 
 A lightweight cursor for non-linear parsing of byte slices.
 
+[![Crates.io](https://img.shields.io/crates/v/taped.svg)](https://crates.io/crates/taped)
+
+## Documentation
+
+[https://docs.rs/taped](https://docs.rs/taped)
+
 ## Overview
 
 `Tape` wraps a byte slice with a position cursor, providing methods for
 scanning, backtracking, and consuming bytes without allocating.
+[`memchr`](https://github.com/BurntSushi/memchr) is used to provide SIMD-optimized
+functions for fixed-length character search.
 
 Originally developed as the byte reader for [`bincake`](https://github.com/aeckar/bincake),
 extracted as a standalone primitive after the same pattern appeared
