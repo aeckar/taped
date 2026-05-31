@@ -10,4 +10,4 @@ keywords = ["iter", "cursor", "pointer"]
 categories = ["parsing", "data-structures"]
 
 [dependencies]
-memchr = "2.8.0"
+memchr = "2.8.1"
