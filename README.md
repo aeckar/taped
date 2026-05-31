@@ -2,6 +2,7 @@
 
 A lightweight cursor for non-linear parsing of byte slices.
 
+[![Rust](https://github.com/aeckar/taped/actions/workflows/rust.yml/badge.svg)](https://github.com/aeckar/taped/actions/workflows/rust.yml)
 [![Crates.io](https://img.shields.io/crates/v/taped.svg)](https://crates.io/crates/taped)
 
 ## Documentation
