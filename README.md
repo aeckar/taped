@@ -26,14 +26,16 @@ across multiple projects.
 ## Example
 
 ```rust
-use taped::Tape;
+use taped::ToTape;
 
-let data = b"hello world";
-let mut tape = Tape::new(data);
+let data = b"hello world!";
+let mut tape = data.to_tape();
 
-tape.seek(|&b| b == b' '); // advance to space
-let word = tape.consume(|&b| b != b' '); // consume "hello"
+tape.seek(|ch, _| ch == b' '); // advance to space
+tape.adv(); // skip one character
+let word = tape.consume(|ch, _| ch != b'!'); // consume "hello"
 assert_eq!(word, b"hello");
+assert_eq!(tape.rest(), b"!");
 ```
 
 ## When to use this
